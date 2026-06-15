@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ksw-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ksw}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ksw_password}
+      POSTGRES_DB: ${POSTGRES_DB:-ksw_website}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ksw-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ksw-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - ksw-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ksw-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ksw}:${POSTGRES_PASSWORD:-ksw_password}@postgres:5432/${POSTGRES_DB:-ksw_website}
+      REDIS_URL: redis://redis:6379
+    ports:
+      - '4000:4000'
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - ksw-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ksw-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ksw}:${POSTGRES_PASSWORD:-ksw_password}@postgres:5432/${POSTGRES_DB:-ksw_website}
+    ports:
+      - '3000:3000'
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - ksw-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: ksw-nginx
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/sites:/etc/nginx/sites-enabled
+      - ./docker/nginx/ssl:/etc/nginx/ssl
+      - certbot_data:/var/www/certbot
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - ksw-network
+
+  certbot:
+    image: certbot/certbot
+    container_name: ksw-certbot
+    volumes:
+      - certbot_data:/var/www/certbot
+      - ./docker/nginx/ssl:/etc/letsencrypt
+    depends_on:
+      - nginx
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+volumes:
+  postgres_data:
+  redis_data:
+  certbot_data:
+
+networks:
+  ksw-network:
+    driver: bridge

@@ -1,0 +1,351 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  VENDOR
+  MANAGER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum NotificationType {
+  EMAIL
+  SMS
+  PUSH
+  IN_APP
+}
+
+enum NotificationChannel {
+  ACCOUNT
+  SECURITY
+  MARKETING
+  SYSTEM
+}
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  emailVerified Boolean    @default(false)
+  password      String?
+  name          String?
+  firstName     String?
+  lastName      String?
+  avatar        String?
+  phone         String?
+  country       String?
+  address       String?
+  role          UserRole   @default(USER)
+  status        UserStatus @default(ACTIVE)
+  preferences   Json?
+  lastLoginAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  sessions      Session[]
+  notifications Notification[]
+  accounts      Account[]
+  blogPosts     Blog[]
+  applications  JobApplication[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String   @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refreshToken      String?  @map("refresh_token")
+  accessToken       String?  @map("access_token")
+  expiresAt         Int?     @map("expires_at")
+  tokenType         String?  @map("token_type")
+  scope             String?
+  idToken           String?  @map("id_token")
+  sessionState      String?  @map("session_state")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  sessionToken String   @unique @map("session_token")
+  expires      DateTime
+  userAgent    String?
+  ipAddress    String?  @map("ip_address")
+  location     String?
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Notification {
+  id        String             @id @default(uuid())
+  userId    String
+  type      NotificationType  @default(EMAIL)
+  channel   NotificationChannel @default(SYSTEM)
+  title     String
+  message   String
+  read      Boolean            @default(false)
+  metadata  Json?
+  createdAt DateTime           @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Blog {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  authorId    String?
+  author      String   @default("KSW TechZone")
+  category    String
+  tags        String[]
+  image       String?
+  description String
+  content     String
+  published   Boolean  @default(false)
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  authorUser User? @relation(fields: [authorId], references: [id])
+
+  @@map("blogs")
+}
+
+model Portfolio {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  category    String
+  description String
+  content     String?
+  image       String?
+  images      String[]
+  tags        String[]
+  client      String?
+  url         String?
+  github      String?
+  featured    Boolean  @default(false)
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("portfolios")
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  tagline     String?
+  description String
+  icon        String?
+  features    String[]
+  image       String?
+  status      String   @default("active")
+  url         String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("products")
+}
+
+model Testimonial {
+  id        String   @id @default(uuid())
+  name      String
+  role      String?
+  company   String?
+  content   String
+  rating    Int      @default(5)
+  image     String?
+  featured  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("testimonials")
+}
+
+model Contact {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  service   String?
+  message   String
+  status    String   @default("unread")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("contacts")
+}
+
+model Job {
+  id          String   @id @default(uuid())
+  title       String
+  department  String
+  location    String
+  type        String   @default("Full-time")
+  description String
+  requirements String[]
+  salaryMin   Int?
+  salaryMax   Int?
+  currency    String   @default("NPR")
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  applications JobApplication[]
+
+  @@map("jobs")
+}
+
+model JobApplication {
+  id         String   @id @default(uuid())
+  jobId      String
+  userId     String?
+  name       String
+  email      String
+  phone      String?
+  resume     String?
+  coverLetter String? @map("cover_letter")
+  portfolio  String?
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  job  Job   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("job_applications")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  entity    String?
+  entityId  String?  @map("entity_id")
+  metadata  Json?
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model Admin {
+  id                      String    @id @default(uuid())
+  username                String    @unique
+  email                   String?
+  password                String
+  verificationCode        String?   @map("verification_code")
+  verificationCodeExpires DateTime? @map("verification_code_expires")
+  lastDeviceFingerprint   String?   @map("last_device_fingerprint")
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  @@map("admins")
+}
+
+model Team {
+  id          String   @id @default(uuid())
+  name        String
+  role        String
+  bio         String?
+  image       String?
+  email       String?
+  phone       String?
+  linkedin    String?
+  github      String?
+  twitter     String?
+  website     String?
+  order       Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("teams")
+}
+
+model Service {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  icon        String?
+  description String
+  content     String?
+  features    String[]
+  image       String?
+  order       Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("services")
+}
+
+model TimelineEvent {
+  id          String   @id @default(uuid())
+  year        String
+  title       String
+  description String
+  icon        String   @default("Building2")
+  order       Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("timeline_events")
+}
+
+model FAQ {
+  id        String   @id @default(uuid())
+  question  String
+  answer    String
+  category  String   @default("general")
+  order     Int      @default(0)
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("faqs")
+}
+
+model SiteSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+}

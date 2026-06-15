@@ -1,0 +1,33 @@
+name: Deploy to cPanel via FTP
+
+on:
+  push:
+    branches: [Prod, main]  # or your deployment branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'  # or your preferred version
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build React app
+        run: npm run build
+
+      - name: Deploy to cPanel via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.SECRET_SERVER }}
+          username: ${{ secrets.SECRET_USERNAME }}
+          password: ${{ secrets.SECRET_PASSWORD }}
+          server-dir: 65.109.25.210   # Adjust to your cPanel target folder
+          local-dir: build
