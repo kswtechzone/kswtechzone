@@ -37,28 +37,32 @@ fi
 mkdir -p logs backups
 
 # ─── Install dependencies ────────────────────────────────────
-echo "[1/6] Installing dependencies..."
+echo "[1/7] Installing dependencies..."
 pnpm install
 
 # ─── Generate Prisma client ──────────────────────────────────
-echo "[2/6] Generating Prisma client..."
+echo "[2/7] Generating Prisma client..."
 npx prisma generate
 
 # ─── Build application ───────────────────────────────────────
-echo "[3/6] Building application..."
+echo "[3/7] Building application..."
 pnpm run build
 
 # ─── Run database migrations ─────────────────────────────────
-echo "[4/6] Running database migrations..."
+echo "[4/7] Running database migrations..."
 npx prisma migrate deploy || echo "[WARN] Migration issue — run manually: npx prisma migrate deploy"
 
+# ─── Seed database ───────────────────────────────────────────
+echo "[5/7] Seeding database..."
+npx prisma db seed
+
 # ─── Start PM2 ───────────────────────────────────────────────
-echo "[5/6] Starting application with PM2..."
-pm2 start ecosystem.config.cjs --env production
+echo "[6/7] Starting application with PM2..."
+pm2 start ecosystem.config.cjs
 pm2 save
 
 # ─── Nginx configuration ─────────────────────────────────────
-echo "[6/6] Configuring Nginx..."
+echo "[7/7] Configuring Nginx..."
 if command -v nginx &> /dev/null; then
     echo "  Copy nginx config:"
     echo "    sudo cp nginx/kswtechzone.conf /etc/nginx/sites-available/"

@@ -67,8 +67,11 @@ pnpm run build
 # Run database migrations
 npx prisma migrate deploy
 
+# Seed initial data (admin user, products, jobs, etc.)
+npx prisma db seed
+
 # Start with PM2
-pm2 start ecosystem.config.cjs --env production
+pm2 start ecosystem.config.cjs
 pm2 save
 pm2 startup   # (follow the printed command to enable on boot)
 ```
@@ -154,8 +157,14 @@ pnpm run build && pm2 reload ksw-frontend
 # Run migrations
 npx prisma migrate deploy
 
+# Seed database (safe — uses upsert, won't duplicate)
+pnpm run db:seed
+
 # Open psql shell
 psql -U ksw -h localhost -d ksw_website
+
+# Seed database (re-run safely after updates)
+pnpm run db:seed
 
 # Renew SSL (automatic via certbot timer)
 sudo certbot renew

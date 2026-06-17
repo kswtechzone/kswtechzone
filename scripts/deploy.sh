@@ -64,12 +64,16 @@ pnpm run build
 echo "[INFO] Running database migrations..."
 npx prisma migrate deploy || echo "[WARN] Migration failed. Manual intervention may be needed."
 
+# ─── Seed database (safe to run, uses upsert) ─────────────────
+echo "[INFO] Seeding database..."
+npx prisma db seed || echo "[WARN] Seed failed."
+
 # ─── Restart PM2 ──────────────────────────────────────────────
 echo "[INFO] Restarting PM2 application..."
 if pm2 list 2>/dev/null | grep -q "ksw-frontend"; then
-    pm2 reload ecosystem.config.cjs --env production
+    pm2 reload ecosystem.config.cjs
 else
-    pm2 start ecosystem.config.cjs --env production
+    pm2 start ecosystem.config.cjs
 fi
 
 # ─── Reload Nginx ─────────────────────────────────────────────
