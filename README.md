@@ -14,7 +14,7 @@ Enterprise-grade corporate website and centralized authentication ecosystem for 
 ├────────────────────────────────────┤
 
 ├────────────────────────────────────┤
-│    Docker + Nginx + VPS            │
+│    PM2 + Nginx + VPS               │
 └────────────────────────────────────┘
 ```
 
@@ -28,7 +28,7 @@ Enterprise-grade corporate website and centralized authentication ecosystem for 
 | Database | PostgreSQL, Prisma ORM |
 | Cache | Redis |
 | Auth | JWT |
-| Deployment | Docker, Nginx, VPS |
+| Deployment | PM2, Nginx, VPS |
 | CI/CD | GitHub Actions |
 
 ## Features
@@ -92,7 +92,8 @@ ksw-website2/
 │       └── common/      # Shared guards, decorators
 ├── prisma/
 │   └── schema.prisma    # Database schema
-├── docker/              # Docker & Nginx config
+├── nginx/               # Nginx configuration
+├── scripts/             # Deployment & setup scripts
 └── docs/                # Documentation
 ```
 

@@ -34,7 +34,7 @@ KSW TechZone is an enterprise-grade corporate website and centralized Single Sig
 - Centralized authentication with role-based access control
 - Role-Based Access Control (RBAC) with 5 roles
 - Multi-tenant architecture supporting all KSW products
-- Docker containerization with Nginx reverse proxy
+- PM2 process manager with Nginx reverse proxy
 - CI/CD ready with GitHub Actions
 
 ---
@@ -148,7 +148,7 @@ KSW TechZone is an enterprise-grade corporate website and centralized Single Sig
 | PostgreSQL 16 | Primary database |
 | Prisma ORM 6 | Database schema & client |
 | Redis 7 | Caching & sessions |
-| Docker / Compose | Containerization |
+| PM2 | Process manager |
 | Nginx | Reverse proxy & SSL termination |
 | Let's Encrypt | SSL certificates |
 
@@ -294,16 +294,14 @@ ksw-website2/
 ├── prisma/                           # Database
 │   └── schema.prisma                 # Complete schema (12 models)
 │
-├── docker/                           # Infrastructure
-│   ├── nginx/
-│   │   ├── nginx.conf
-│   │   └── sites/
-│   │       └── kswtechzone.conf
-│   └── scripts/
-│       └── deploy.sh
+├── nginx/                            # Nginx configuration
+│   └── kswtechzone.conf              # Site config
 │
-├── docker-compose.yml                # Multi-service orchestration
-├── Dockerfile                         # Frontend container
+├── scripts/                          # Deployment scripts
+│   ├── deploy.sh
+│   └── setup.sh
+│
+├── ecosystem.config.cjs              # PM2 process configuration
 │
 ├── .github/
 │   └── workflows/
@@ -719,11 +717,11 @@ function Dashboard() {
 | 3 | Injection | Prisma ORM (parameterized queries), Zod validation |
 | 4 | Insecure Design | Clean Architecture, SOLID principles, rate limiting |
 | 5 | Security Misconfiguration | Helmet headers, CORS whitelist, no debug endpoints |
-| 6 | Vulnerable Components | npm audit, regular updates, docker scanning |
+| 6 | Vulnerable Components | npm audit, regular updates, dependency scanning |
 | 7 | Auth Failures | MFA, session management |
 | 8 | Data Integrity | JWT signature verification, SameSite cookies, audit logs |
 | 9 | Logging & Monitoring | Audit logs for all mutations, structured logging |
-| 10 | SSRF | URL validation, Docker network isolation |
+| 10 | SSRF | URL validation, network isolation |
 
 ### Security Headers (Nginx)
 ```nginx
@@ -780,38 +778,33 @@ add_header Referrer-Policy strict-origin-when-cross-origin;
 
 ---
 
-## 15. Docker & Deployment
+## 15. Deployment (PM2 + Nginx)
 
-### Docker Compose Services
+### Process Manager (PM2)
 
-| Service | Image | Port | Dependencies |
-|---------|-------|------|-------------|
-| postgres | postgres:16-alpine | 5432 | - |
-| redis | redis:7-alpine | 6379 | - |
-| frontend | ksw-frontend (build) | 3000 | postgres, redis |
-| backend | ksw-backend (build) | 4000 | postgres, redis |
-| nginx | nginx:alpine | 80, 443 | frontend, backend |
-| certbot | certbot/certbot | - | nginx |
+| App | Script | Port |
+|-----|--------|------|
+| ksw-frontend | `next start -p 3000` | 3000 |
 
-### Dockerfile (Multi-stage)
-1. **Builder stage**: Install deps, generate Prisma, build Next.js
-2. **Runner stage**: Copy standalone output, run as non-root user
+Managed via `ecosystem.config.cjs` with auto-restart, log rotation, and memory limit (1G).
 
 ### Nginx Configuration
 - HTTP → HTTPS redirect
 - SSL termination with Let's Encrypt
 - Security headers
-- Reverse proxy to frontend (port 3000) and backend (port 4000)
-- Static file caching
+- Reverse proxy to frontend (localhost:3000)
+- WebSocket support
 - Gzip compression
 
 ### Deployment Steps
-1. Set up Ubuntu VPS with Docker
-2. Configure SSL certificates via Let's Encrypt
+1. Set up Ubuntu VPS with Node.js 20+, pnpm, PM2, and Nginx
+2. Configure SSL certificates via Let's Encrypt (`certbot --nginx`)
 3. Clone repository
 4. Configure `.env` with production values
-5. Run `docker compose up -d`
-6. Monitor with `docker compose logs -f`
+5. Run `pnpm install && pnpm build`
+6. Run `npx prisma migrate deploy`
+7. Start with `pm2 start ecosystem.config.cjs --env production`
+8. Copy nginx config and reload: `sudo systemctl reload nginx`
 
 ---
 
@@ -840,15 +833,14 @@ add_header Referrer-Policy strict-origin-when-cross-origin;
    - Run deploy script
    - Check service health
 
-### Deployment Script (docker/scripts/deploy.sh)
+### Deployment Script (scripts/deploy.sh)
 1. Pull latest git changes
 2. Load environment variables
-3. Stop existing containers
-4. Rebuild images (no cache)
-5. Start containers in detached mode
-6. Run database migrations
-7. Clean up old Docker images
-8. Check frontend and backend health
+3. Install dependencies & build
+4. Run database migrations
+5. Restart PM2 application
+6. Reload Nginx
+7. Health check via curl
 
 ---
 
@@ -918,11 +910,11 @@ npm run dev            # Start development server (localhost:3000)
 - [ ] UFW firewall (only ports 80, 443, 22)
 - [ ] SSH key-only authentication
 - [ ] Regular automated database backups
-- [ ] Docker containers not running as root
+- [ ] PM2 processes not running as root
 - [ ] Audit logging enabled and monitored
 
 ### Monitoring
-- [ ] Docker container health checks
+- [ ] PM2 process health checks
 - [ ] Application performance monitoring (APM)
 - [ ] Error tracking (Sentry or similar)
 - [ ] Uptime monitoring

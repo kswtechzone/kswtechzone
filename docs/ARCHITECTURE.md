@@ -6,7 +6,7 @@ KSW TechZone is a modern Next.js 14 application (App Router) with:
 - **API Routes** under `src/app/api/` — all backend logic lives here
 - **Prisma ORM** connected to PostgreSQL
 - **Nginx** reverse proxy with SSL termination
-- **Docker** containerization for production
+- **PM2** process manager for production
 
 ## Architecture Diagram
 

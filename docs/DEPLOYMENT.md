@@ -1,4 +1,4 @@
-# VPS Deployment Guide — Ubuntu (Docker)
+# VPS Deployment Guide — Ubuntu (PM2 + Nginx)
 
 ## Prerequisites
 
@@ -12,23 +12,22 @@
 
 ```bash
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y curl git ufw fail2ban
+sudo apt install -y curl git ufw fail2ban nginx certbot python3-certbot-nginx
 ```
 
-## 2. Install Docker
+## 2. Install Node.js 20+
 
 ```bash
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER
-newgrp docker  # or log out and back in
-sudo systemctl enable docker
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+node --version
+npm --version
 ```
 
-## 3. Install Docker Compose Plugin
+## 3. Install pnpm & PM2
 
 ```bash
-sudo apt install -y docker-compose-plugin
-docker compose version
+sudo npm install -g pnpm pm2
 ```
 
 ## 4. Clone the Repository
@@ -51,42 +50,49 @@ Set:
 
 | Variable | Value |
 |----------|-------|
-| `DATABASE_URL` | `postgresql://ksw:<password>@postgres:5432/ksw_website` (host = Docker service name) |
-| `REDIS_URL` | `redis://redis:6379` |
+| `DATABASE_URL` | `postgresql://ksw:<password>@localhost:5432/ksw_website` |
+| `REDIS_URL` | `redis://localhost:6379` |
 | `JWT_SECRET` | `openssl rand -hex 64` |
 | `SMTP_*` | Your SMTP credentials |
-| `POSTGRES_PASSWORD` | Same password used in `DATABASE_URL` |
 | `NEXT_PUBLIC_APP_URL` | `https://kswtechzone.com` |
 
 ## 6. First-Time Launch
 
 ```bash
-docker compose up -d postgres redis
-docker compose up -d frontend
-docker compose exec -T frontend npx prisma migrate deploy
-docker compose exec -T frontend npx prisma db seed
+# Install dependencies & build
+pnpm install
+npx prisma generate
+pnpm run build
+
+# Run database migrations
+npx prisma migrate deploy
+
+# Start with PM2
+pm2 start ecosystem.config.cjs --env production
+pm2 save
+pm2 startup   # (follow the printed command to enable on boot)
 ```
 
-### SSL Certificate (First Time)
+### SSL Certificate
 
 ```bash
-# Stop nginx if running
-docker compose stop nginx
-
-# Run certbot manually to get the certificate
-docker compose run --rm certbot certonly --webroot -w /var/www/certbot \
-  -d kswtechzone.com -d www.kswtechzone.com \
+sudo certbot --nginx -d kswtechzone.com -d www.kswtechzone.com \
   --email admin@kswtechzone.com --agree-tos --no-eff-email
+```
 
-# Start all services
-docker compose up -d
+### Nginx Configuration
+
+```bash
+sudo cp nginx/kswtechzone.conf /etc/nginx/sites-available/kswtechzone.conf
+sudo ln -sf /etc/nginx/sites-available/kswtechzone.conf /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl restart nginx
 ```
 
 ## 7. Deployment Script
 
 ```bash
-chmod +x docker/scripts/deploy.sh
-./docker/scripts/deploy.sh
+chmod +x scripts/deploy.sh
+./scripts/deploy.sh
 ```
 
 ## 8. Firewall
@@ -103,14 +109,18 @@ sudo ufw --force enable
 ## 9. Monitoring & Logs
 
 ```bash
-# All services
-docker compose logs -f
+# Application logs
+pm2 logs ksw-frontend
 
-# Specific service
-docker compose logs -f frontend
+# PM2 status
+pm2 status
 
 # Resource usage
-docker stats
+pm2 monit
+
+# Nginx logs
+sudo tail -f /var/log/nginx/access.log
+sudo tail -f /var/log/nginx/error.log
 ```
 
 ## 10. Updates
@@ -118,7 +128,7 @@ docker stats
 ```bash
 cd /var/www/kswtechzone
 git pull origin main
-./docker/scripts/deploy.sh
+./scripts/deploy.sh
 ```
 
 ## 11. Backup & Restore
@@ -126,33 +136,37 @@ git pull origin main
 ### Backup
 
 ```bash
-docker compose exec -T postgres pg_dump -U ksw ksw_website > backup-$(date +%Y%m%d).sql
+pg_dump -U ksw -h localhost ksw_website > backup-$(date +%Y%m%d).sql
 ```
 
 ### Restore
 
 ```bash
-cat backup.sql | docker compose exec -T postgres psql -U ksw -d ksw_website
+psql -U ksw -h localhost -d ksw_website < backup.sql
 ```
 
 ## Useful Commands
 
 ```bash
 # Rebuild frontend (after code changes)
-docker compose up -d --build frontend
+pnpm run build && pm2 reload ksw-frontend
 
 # Run migrations
-docker compose exec -T frontend npx prisma migrate deploy
+npx prisma migrate deploy
 
 # Open psql shell
-docker compose exec -T postgres psql -U ksw -d ksw_website
+psql -U ksw -h localhost -d ksw_website
 
-# Renew SSL (automatic via certbot container every 12h)
-docker compose logs certbot
+# Renew SSL (automatic via certbot timer)
+sudo certbot renew
 
-# Clean up
-docker compose down
-docker system prune -a
+# Stop/start application
+pm2 stop ksw-frontend
+pm2 start ksw-frontend
+pm2 restart ksw-frontend
+
+# Clean up old builds
+rm -rf .next
 ```
 
 ## Security Checklist
@@ -165,4 +179,3 @@ docker system prune -a
 - [ ] Fail2ban running: `sudo systemctl status fail2ban`
 - [ ] Regular backups: add cron job (`crontab -e`)
 - [ ] OS auto-updates: `sudo apt install unattended-upgrades`
-- [ ] Docker not exposed via TCP (no `-H tcp://` in daemon config)
