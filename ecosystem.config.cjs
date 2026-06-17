@@ -2,13 +2,13 @@ module.exports = {
   apps: [
     {
       name: 'ksw-frontend',
-      script: 'node_modules/next/dist/bin/next',
-      args: 'start -p 3000',
+      script: '.next/standalone/server.js',
       cwd: __dirname,
       instances: 1,
       exec_mode: 'fork',
       env: {
         NODE_ENV: 'production',
+        PORT: '3000',
       },
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
       error_file: './logs/pm2-error.log',
