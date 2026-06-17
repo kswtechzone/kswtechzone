@@ -46,15 +46,24 @@ cp .env.example .env
 nano .env
 ```
 
-Set:
+Set all required variables:
 
-| Variable | Value |
-|----------|-------|
-| `DATABASE_URL` | `postgresql://ksw:<password>@localhost:5432/ksw_website` |
-| `REDIS_URL` | `redis://localhost:6379` |
-| `JWT_SECRET` | `openssl rand -hex 64` |
-| `SMTP_*` | Your SMTP credentials |
-| `NEXT_PUBLIC_APP_URL` | `https://kswtechzone.com` |
+| Variable | Value | Purpose |
+|----------|-------|---------|
+| `DATABASE_URL` | `postgresql://ksw:<password>@localhost:5432/ksw_website` | PostgreSQL connection |
+| `REDIS_URL` | `redis://localhost:6379` | Redis connection |
+| `JWT_SECRET` | `openssl rand -hex 64` | JWT signing (generate with the command) |
+| `SMTP_HOST` | `smtp.gmail.com` | SMTP server |
+| `SMTP_PORT` | `587` | SMTP port |
+| `SMTP_USER` | `your-email@gmail.com` | SMTP username |
+| `SMTP_PASS` | `your-app-password` | SMTP password (Gmail app password) |
+| `SMTP_FROM` | `"KSW TechZone <noreply@kswtechzone.com>"` | Sender address |
+| `ADMIN_EMAIL` | `admin@example.com` | Contact form notifications go here |
+| `NEXT_PUBLIC_APP_URL` | `https://kswtechzone.com` | Public site URL |
+| `NEXT_PUBLIC_SITE_URL` | `https://kswtechzone.com` | Used in email links (same as APP_URL) |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | `hello@kswtechzone.com` | Displayed on contact page |
+| `NEXT_PUBLIC_CONTACT_PHONE` | `+977-9863198323` | Displayed on contact page |
+| `CORS_ORIGINS` | `https://kswtechzone.com` | Allowed CORS origins (comma-separated if multiple) |
 
 ## 6. First-Time Launch
 
@@ -75,6 +84,8 @@ pm2 start ecosystem.config.cjs
 pm2 save
 pm2 startup   # (follow the printed command to enable on boot)
 ```
+
+> **Admin login**: On first login from a new device, a 6-digit verification code is sent via email (SMTP required). If SMTP is not configured, the code is printed in the PM2 logs — run `pm2 logs ksw-frontend` to find it.
 
 ### SSL Certificate
 
@@ -162,9 +173,6 @@ pnpm run db:seed
 
 # Open psql shell
 psql -U ksw -h localhost -d ksw_website
-
-# Seed database (re-run safely after updates)
-pnpm run db:seed
 
 # Renew SSL (automatic via certbot timer)
 sudo certbot renew

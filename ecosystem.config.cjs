@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'ksw-frontend',
+      name: 'ksw_techzone',
       script: '.next/standalone/server.js',
       cwd: __dirname,
       instances: 1,

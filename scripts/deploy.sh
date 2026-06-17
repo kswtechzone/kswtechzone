@@ -44,8 +44,8 @@ BACKUP_DIR="${BACKUP_DIR:-./backups}"
 mkdir -p "$BACKUP_DIR"
 BACKUP_FILE="$BACKUP_DIR/ksw-$(date +%Y%m%d-%H%M%S).sql"
 
-if command -v pg_dump &> /dev/null; then
-    pg_dump "${DATABASE_URL}" > "$BACKUP_FILE" 2>/dev/null && gzip "$BACKUP_FILE" || echo "[WARN] Backup failed."
+if command -v pg_dump &> /dev/null && [ -n "${DATABASE_URL:-}" ]; then
+    pg_dump -d "${DATABASE_URL}" > "$BACKUP_FILE" 2>/dev/null && gzip "$BACKUP_FILE" && echo "[OK] Backup saved: ${BACKUP_FILE}.gz" || echo "[WARN] Backup failed."
 else
     echo "[INFO] pg_dump not found, skipping backup."
 fi

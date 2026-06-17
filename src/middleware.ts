@@ -70,7 +70,11 @@ function isValidOrigin(request: NextRequest): boolean {
   if (!origin) return true;
   try {
     const { hostname } = new URL(origin);
-    const allowedHosts = ['kswtechzone.com', 'localhost', '127.0.0.1'];
+    const corsVar = process.env.CORS_ORIGINS || 'http://localhost:3000';
+    const allowedHosts = corsVar.split(',').map(u => {
+      try { return new URL(u.trim()).hostname; } catch { return ''; }
+    }).filter(Boolean);
+    allowedHosts.push('localhost', '127.0.0.1');
     return allowedHosts.some(h => hostname === h || hostname.endsWith('.' + h));
   } catch {
     return false;
