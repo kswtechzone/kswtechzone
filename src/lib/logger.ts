@@ -1,48 +1,32 @@
 import pino from 'pino';
 
 const isDev = process.env.NODE_ENV !== 'production';
-const isEdge = typeof (globalThis as Record<string, unknown>).EdgeRuntime === 'string';
+
+const canUseNodeRuntime = typeof window === 'undefined' && typeof globalThis.process !== 'undefined';
 
 const options: pino.LoggerOptions = {
   level: process.env.LOG_LEVEL || (isDev ? 'debug' : 'info'),
+  timestamp: pino.stdTimeFunctions.isoTime,
 };
 
-if (isEdge) {
-  // Edge Runtime (middleware) — minimal pino, no fs/transport available
-} else {
-  options.formatters = {
-    level(label) {
-      return { level: label };
-    },
-  };
-  options.serializers = {
-    req: pino.stdSerializers.req,
-    res: pino.stdSerializers.res,
-    err: pino.stdSerializers.err,
-  };
+const getTransport = () => {
+  if (!canUseNodeRuntime) return undefined;
 
   if (isDev) {
-    options.transport = {
+    return pino.transport({
       target: 'pino-pretty',
-      options: { colorize: true, translateTime: 'HH:MM:ss.l', ignore: 'pid,hostname' },
-    };
-  } else {
-    const logDir = process.cwd() + '/logs';
-    options.transport = {
-      targets: [
-        { target: 'pino/file', options: {} },
-        {
-          target: 'pino/file',
-          options: {
-            destination: `${logDir}/app-${new Date().toISOString().slice(0, 10)}.log`,
-            mkdir: true,
-          },
-        },
-      ],
-    };
+      options: {
+        colorize: true,
+        ignore: 'pid,hostname',
+      },
+    });
   }
-}
 
-const logger = pino(options);
+  return undefined;
+};
+
+const transport = getTransport();
+
+const logger = transport ? pino(options, transport) : pino(options);
 
 export default logger;
