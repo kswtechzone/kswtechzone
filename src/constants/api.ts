@@ -7,6 +7,7 @@ export const API = {
     LOGOUT: `${API_BASE}/api/auth/admin-logout`,
   },
   BLOGS: `${API_BASE}/api/blogs`,
+  BLOG_BY_SLUG: (slug: string) => `${API_BASE}/api/blogs/by-slug/${slug}`,
   CONTACTS: `${API_BASE}/api/contacts`,
   JOBS: `${API_BASE}/api/jobs`,
   PORTFOLIOS: `${API_BASE}/api/portfolios`,

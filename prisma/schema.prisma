@@ -15,6 +15,13 @@ enum UserRole {
   SUPER_ADMIN
 }
 
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
 enum UserStatus {
   ACTIVE
   INACTIVE
@@ -267,6 +274,9 @@ model Admin {
   username                String    @unique
   email                   String?
   password                String
+  role                    AdminRole @default(ADMIN)
+  isActive                Boolean   @default(true)
+  lastLoginAt             DateTime?
   verificationCode        String?   @map("verification_code")
   verificationCodeExpires DateTime? @map("verification_code_expires")
   lastDeviceFingerprint   String?   @map("last_device_fingerprint")
@@ -274,6 +284,22 @@ model Admin {
   updatedAt               DateTime  @updatedAt
 
   @@map("admins")
+}
+
+model ShareLog {
+  id              String   @id @default(uuid())
+  url             String
+  title           String?
+  description     String?
+  image           String?
+  platform        String?
+  referrer        String?
+  ipAddress       String?  @map("ip_address")
+  userAgent       String?  @map("user_agent")
+  metadata        Json?
+  createdAt       DateTime @default(now())
+
+  @@map("share_logs")
 }
 
 model Team {

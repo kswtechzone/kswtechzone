@@ -12,11 +12,6 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://kswtechzone.com'),
-  icons: {
-    icon: '/favicon.png',
-    shortcut: '/favicon.ico',
-    apple: '/favicon.png',
-  },
   title: {
     default: 'KSW TechZone | Transforming Ideas Into Digital Solutions',
     template: '%s | KSW TechZone',
@@ -31,6 +26,8 @@ export const metadata: Metadata = {
     'e-commerce solutions', 'UI UX design', 'IT consulting Nepal',
     'custom software Nepal', 'mobile app development Nepal',
     'web development Nepal', 'digital marketing Nepal',
+    'best software company in Nepal', 'affordable web development Nepal',
+    'enterprise software Nepal', 'IT services Kathmandu',
   ],
   authors: [{ name: 'KSW TechZone', url: 'https://kswtechzone.com' }],
   creator: 'KSW TechZone',
@@ -38,6 +35,14 @@ export const metadata: Metadata = {
   category: 'technology',
   classification: 'Technology Company',
   referrer: 'origin-when-cross-origin',
+
+  icons: {
+    icon: '/favicon.png',
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
+  manifest: '/manifest.json',
+
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -46,17 +51,36 @@ export const metadata: Metadata = {
     title: 'KSW TechZone | Transforming Ideas Into Digital Solutions',
     description:
       'Nepal-based technology company specializing in custom software development, web applications, mobile apps, SaaS, AI, and digital marketing.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'KSW TechZone' }],
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'KSW TechZone - Transforming Ideas Into Digital Solutions',
+      },
+      {
+        url: '/og-image-square.png',
+        width: 800,
+        height: 800,
+        alt: 'KSW TechZone',
+      },
+    ],
     countryName: 'Nepal',
+    emails: ['kswtechzone@gmail.com'],
+    phoneNumbers: ['+977-9863198323'],
+    faxNumbers: [],
   },
+
   twitter: {
     card: 'summary_large_image',
-    title: 'KSW TechZone',
-    description: 'Transforming Ideas Into Digital Solutions',
+    title: 'KSW TechZone | Transforming Ideas Into Digital Solutions',
+    description:
+      'Nepal-based technology company specializing in custom software development, web applications, mobile apps, SaaS, AI, and digital marketing.',
     images: ['/og-image.png'],
     site: '@kswtechzone',
     creator: '@kswtechzone',
   },
+
   robots: {
     index: true,
     follow: true,
@@ -68,16 +92,50 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+
   verification: {
     google: 'google-site-verification-code',
+    yandex: 'yandex-verification-code',
+    yahoo: 'yahoo-site-verification-code',
   },
+  other: {
+    'msvalidate.01': 'bing-site-verification-code',
+    'yandex-verification': 'yandex-verification-code',
+    'facebook-domain-verification': 'facebook-domain-verification-code',
+    'fb:app_id': 'facebook-app-id',
+    'og:locale:alternate': 'ne_NP',
+    'geo.region': 'NP-P3',
+    'geo.placename': 'Kathmandu',
+    'geo.position': '27.7172;85.3240',
+    'ICBM': '27.7172, 85.3240',
+  },
+
   alternates: {
     canonical: 'https://kswtechzone.com',
+    languages: {
+      'en-US': 'https://kswtechzone.com',
+      'ne-NP': 'https://kswtechzone.com/np',
+    },
   },
+
   appleWebApp: {
     capable: true,
     title: 'KSW TechZone',
     statusBarStyle: 'black-translucent',
+    startupImage: '/apple-splash.png',
+  },
+
+  appLinks: {
+    web: {
+      url: 'https://kswtechzone.com',
+      should_fallback: true,
+    },
+  },
+
+  formatDetection: {
+    telephone: true,
+    email: true,
+    address: true,
   },
 };
 

@@ -1,6 +1,10 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
+
 export function JsonLd() {
+  const pathname = usePathname();
+
   const schema = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -11,7 +15,7 @@ export function JsonLd() {
         name: 'KSW TechZone',
         alternateName: 'KSW TechZone Nepal',
         description:
-          'KSW TechZone is a Nepal-based technology company specializing in custom software development, web applications, mobile apps, SaaS, AI solutions, and digital marketing. Best software services in Kathmandu, Nepal.',
+          'KSW TechZone is a Nepal-based technology company specializing in custom software development, web applications, mobile apps, SaaS, AI solutions, and digital marketing.',
         inLanguage: 'en-US',
         potentialAction: {
           '@type': 'SearchAction',
@@ -27,7 +31,12 @@ export function JsonLd() {
         '@id': 'https://kswtechzone.com/#organization',
         name: 'KSW TechZone',
         url: 'https://kswtechzone.com',
-        logo: 'https://kswtechzone.com/logo.png',
+        logo: {
+          '@type': 'ImageObject',
+          url: 'https://kswtechzone.com/logo.png',
+          width: 512,
+          height: 512,
+        },
         description:
           'A Nepal-based technology company delivering enterprise-grade software solutions including web development, mobile apps, SaaS, and AI for businesses worldwide.',
         foundingDate: '2020',
@@ -39,19 +48,33 @@ export function JsonLd() {
           '@type': 'PostalAddress',
           streetAddress: 'Kathmandu',
           addressLocality: 'Kathmandu',
+          addressRegion: 'Bagmati',
+          postalCode: '44600',
           addressCountry: 'NP',
         },
-        contactPoint: {
-          '@type': 'ContactPoint',
-          telephone: '+977-9863198323',
-          contactType: 'customer service',
-          email: 'kswtechzone@gmail.com',
-        },
+        contactPoint: [
+          {
+            '@type': 'ContactPoint',
+            telephone: '+977-9863198323',
+            contactType: 'customer service',
+            email: 'kswtechzone@gmail.com',
+            availableLanguage: ['English', 'Nepali'],
+          },
+          {
+            '@type': 'ContactPoint',
+            telephone: '+977-9863198323',
+            contactType: 'sales',
+            email: 'kswtechzone@gmail.com',
+            availableLanguage: ['English', 'Nepali'],
+          },
+        ],
         sameAs: [
           'https://www.facebook.com/kswtechzone',
           'https://www.linkedin.com/company/kswtechzone',
           'https://twitter.com/kswtechzone',
           'https://www.instagram.com/kswtechzone',
+          'https://www.youtube.com/@kswtechzone',
+          'https://github.com/kswtechzone',
         ],
         keywords: [
           'KSW TechZone',
@@ -71,97 +94,40 @@ export function JsonLd() {
           'enterprise software Nepal',
         ],
         offers: [
-          {
-            '@type': 'Offer',
-            itemOffered: {
-              '@type': 'Service',
-              name: 'Software Development',
-              description:
-                'Custom software development services in Nepal — build scalable enterprise applications, ERP, CRM, and POS systems for your business.',
-            },
-          },
-          {
-            '@type': 'Offer',
-            itemOffered: {
-              '@type': 'Service',
-              name: 'Web Development',
-              description:
-                'Professional web development company in Nepal offering responsive websites, e-commerce platforms, and web applications using modern frameworks.',
-            },
-          },
-          {
-            '@type': 'Offer',
-            itemOffered: {
-              '@type': 'Service',
-              name: 'Mobile App Development',
-              description:
-                'iOS and Android mobile app development services by KSW TechZone — from MVPs to full-scale enterprise mobile solutions.',
-            },
-          },
-          {
-            '@type': 'Offer',
-            itemOffered: {
-              '@type': 'Service',
-              name: 'SaaS Development',
-              description:
-                'End-to-end SaaS platform development in Nepal — multi-tenant architecture, subscription billing, and cloud-native applications.',
-            },
-          },
-          {
-            '@type': 'Offer',
-            itemOffered: {
-              '@type': 'Service',
-              name: 'Digital Marketing',
-              description:
-                'Digital marketing agency services in Nepal — SEO, SEM, social media marketing, content strategy, and paid advertising campaigns.',
-            },
-          },
-          {
-            '@type': 'Offer',
-            itemOffered: {
-              '@type': 'Service',
-              name: 'AI Solutions',
-              description:
-                'AI and machine learning development services including chatbots, predictive analytics, computer vision, and intelligent automation.',
-            },
-          },
-          {
-            '@type': 'Offer',
-            itemOffered: {
-              '@type': 'Service',
-              name: 'Cloud Solutions',
-              description:
-                'Cloud infrastructure and DevOps consulting in Nepal — AWS, Azure, GCP migration, CI/CD pipelines, and cloud-native architecture.',
-            },
-          },
-          {
-            '@type': 'Offer',
-            itemOffered: {
-              '@type': 'Service',
-              name: 'UI UX Design',
-              description:
-                'Professional UI UX design services — wireframing, prototyping, user research, and interface design for web and mobile applications.',
-            },
-          },
-          {
-            '@type': 'Offer',
-            itemOffered: {
-              '@type': 'Service',
-              name: 'E-commerce Development',
-              description:
-                'E-commerce website development in Nepal — custom online stores, payment gateway integration, and marketplace platforms.',
-            },
-          },
-          {
-            '@type': 'Offer',
-            itemOffered: {
-              '@type': 'Service',
-              name: 'IT Consulting',
-              description:
-                'IT consulting services in Nepal — technology strategy, digital transformation, architecture design, and technical due diligence.',
-            },
-          },
+          { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Software Development' } },
+          { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Web Development' } },
+          { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Mobile App Development' } },
+          { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'SaaS Development' } },
+          { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Digital Marketing' } },
+          { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'AI Solutions' } },
+          { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Cloud Solutions' } },
+          { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'UI UX Design' } },
+          { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'E-commerce Development' } },
+          { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'IT Consulting' } },
         ],
+      },
+      {
+        '@type': 'LocalBusiness',
+        '@id': 'https://kswtechzone.com/#localbusiness',
+        name: 'KSW TechZone',
+        image: 'https://kswtechzone.com/logo.png',
+        url: 'https://kswtechzone.com',
+        telephone: '+977-9863198323',
+        email: 'kswtechzone@gmail.com',
+        priceRange: '$$',
+        openingHours: 'Mo-Fr 09:00-18:00',
+        currenciesAccepted: 'NPR, USD',
+        paymentAccepted: ['Cash', 'Bank Transfer', 'eSewa', 'Khalti'],
+        areaServed: ['Nepal', 'United States', 'Australia', 'United Kingdom', 'Canada'],
+        hasOfferCatalog: {
+          '@type': 'OfferCatalog',
+          name: 'Digital Services',
+          itemListElement: [
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Software Development' } },
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Web Development' } },
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Mobile App Development' } },
+          ],
+        },
       },
     ],
   };

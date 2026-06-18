@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { checkRateLimit } from '@/lib/rate-limiter';
+import logger from '@/lib/logger';
 
 const publicPaths = [
   '/',
@@ -112,7 +113,7 @@ export async function middleware(request: NextRequest) {
   response.headers.set('X-RateLimit-Reset', String(Math.ceil(rateResult.resetAt / 1000)));
 
   if (!rateResult.allowed) {
-    console.warn(JSON.stringify({ level: 'warn', method: request.method, path: pathname, status: 429, duration: Math.round(performance.now() - start), ip, ua: request.headers.get('user-agent') || '', time: new Date().toISOString() }));
+    logger.warn({ method: request.method, path: pathname, status: 429, duration: Math.round(performance.now() - start), ip, ua: request.headers.get('user-agent') || '' }, 'Rate limit exceeded');
     return new NextResponse('Too Many Requests', {
       status: 429,
       headers: {
@@ -122,9 +123,7 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(`${request.method} ${pathname} ${response.status} ${Math.round(performance.now() - start)}ms`);
-  }
+  logger.debug({ method: request.method, path: pathname, status: response.status, duration: Math.round(performance.now() - start) }, `${request.method} ${pathname}`);
 
   const isPublic = publicPaths.some(
     (path) => pathname === path || pathname.startsWith(path + '/')
@@ -135,6 +134,41 @@ export async function middleware(request: NextRequest) {
     if (!adminCookie) {
       const loginUrl = new URL('/admin/login', request.url);
       return NextResponse.redirect(loginUrl);
+    }
+
+    if (pathname === '/admin/login') {
+      return response;
+    }
+
+    try {
+      const { jwtVerify } = await import('jose');
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key-change-in-production');
+      const { payload } = await jwtVerify(adminCookie.value, secret);
+      const adminId = payload.sub as string;
+
+      if (adminId) {
+        const { PrismaClient } = await import('@prisma/client');
+        const prisma = new PrismaClient();
+        const admin = await (prisma as any).admin.findUnique({
+          where: { id: adminId },
+        });
+        await prisma.$disconnect();
+
+        const isActive = admin ? (admin as any).isActive !== false : false;
+        if (!admin || !isActive) {
+          const loginUrl = new URL('/admin/login', request.url);
+          const redirectResponse = NextResponse.redirect(loginUrl);
+          redirectResponse.cookies.set('auth_token', '', { maxAge: 0, path: '/' });
+          return redirectResponse;
+        }
+
+        response.headers.set('X-Admin-Role', (admin as any).role || 'ADMIN');
+      }
+    } catch {
+      const loginUrl = new URL('/admin/login', request.url);
+      const redirectResponse = NextResponse.redirect(loginUrl);
+      redirectResponse.cookies.set('auth_token', '', { maxAge: 0, path: '/' });
+      return redirectResponse;
     }
   }
 

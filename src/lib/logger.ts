@@ -1,58 +1,48 @@
 import pino from 'pino';
-import fs from 'fs';
-import path from 'path';
 
-const pinoOptions: pino.LoggerOptions = {
-  level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
-  formatters: {
+const isDev = process.env.NODE_ENV !== 'production';
+const isEdge = typeof globalThis.EdgeRuntime === 'string';
+
+const options: pino.LoggerOptions = {
+  level: process.env.LOG_LEVEL || (isDev ? 'debug' : 'info'),
+};
+
+if (isEdge) {
+  // Edge Runtime (middleware) — minimal pino, no fs/transport available
+} else {
+  options.formatters = {
     level(label) {
       return { level: label };
     },
-  },
-  serializers: {
+  };
+  options.serializers = {
     req: pino.stdSerializers.req,
     res: pino.stdSerializers.res,
     err: pino.stdSerializers.err,
-  },
-};
+  };
 
-function createStreams(): pino.StreamEntry[] {
-  const streams: pino.StreamEntry[] = [
-    { stream: pino.destination(1) },
-  ];
-
-  if (process.env.NODE_ENV === 'production') {
-    const logsDir = path.resolve(process.cwd(), 'logs');
-    if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
-
-    const today = new Date().toISOString().slice(0, 10);
-    const logFile = path.join(logsDir, `app-${today}.log`);
-
-    const fileStream = fs.createWriteStream(logFile, { flags: 'a' });
-    streams.push({ stream: fileStream });
-
-    cleanupOldLogs(logsDir);
-  }
-
-  return streams;
-}
-
-function cleanupOldLogs(dir: string): void {
-  try {
-    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    const files = fs.readdirSync(dir);
-    for (const file of files) {
-      if (!file.startsWith('app-')) continue;
-      const fp = path.join(dir, file);
-      const stat = fs.statSync(fp);
-      if (stat.isFile() && stat.mtimeMs < cutoff) {
-        fs.unlinkSync(fp);
-      }
-    }
-  } catch {
+  if (isDev) {
+    options.transport = {
+      target: 'pino-pretty',
+      options: { colorize: true, translateTime: 'HH:MM:ss.l', ignore: 'pid,hostname' },
+    };
+  } else {
+    const logDir = process.cwd() + '/logs';
+    options.transport = {
+      targets: [
+        { target: 'pino/file', options: {} },
+        {
+          target: 'pino/file',
+          options: {
+            destination: `${logDir}/app-${new Date().toISOString().slice(0, 10)}.log`,
+            mkdir: true,
+          },
+        },
+      ],
+    };
   }
 }
 
-const logger = pino(pinoOptions, pino.multistream(createStreams()));
+const logger = pino(options);
 
 export default logger;

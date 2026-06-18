@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { sendVerificationCode } from '@/lib/email';
 import logger from '@/lib/logger';
 import { apiHandler, createApiError } from '@/lib/api-handler';
+import { createAuditLog } from '@/lib/audit-log';
 
 const JWT_SECRET = (process as unknown as { env: Record<string, string | undefined> }).env.JWT_SECRET || 'secret';
 
@@ -76,9 +77,19 @@ export const POST = apiHandler<LoginResponse>(async (req: Request) => {
       path: '/',
     });
 
+    await createAuditLog({
+      userId: admin.id,
+      action: 'ADMIN_LOGIN',
+      entity: 'Admin',
+      entityId: admin.id,
+      metadata: { method: '2FA', username: admin.username },
+      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null,
+      userAgent: req.headers.get('user-agent') || null,
+    });
+
     return NextResponse.json({
       message: 'Login successful',
-      user: { id: admin.id, username: admin.username },
+      user: { id: admin.id, username: admin.username, role: (admin as { role?: string }).role || 'ADMIN' },
       token,
     });
   }
@@ -139,9 +150,19 @@ export const POST = apiHandler<LoginResponse>(async (req: Request) => {
     path: '/',
   });
 
+  await createAuditLog({
+    userId: admin.id,
+    action: 'ADMIN_LOGIN',
+    entity: 'Admin',
+    entityId: admin.id,
+    metadata: { method: 'direct', username: admin.username },
+    ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null,
+    userAgent: req.headers.get('user-agent') || null,
+  });
+
   return NextResponse.json({
     message: 'Login successful',
-    user: { id: admin.id, username: admin.username },
+    user: { id: admin.id, username: admin.username, role: (admin as { role?: string }).role || 'ADMIN' },
     token,
   });
 });
